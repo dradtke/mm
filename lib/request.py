@@ -50,7 +50,7 @@ class MavensMateRequestHandler():
         if self.payload != None and type(self.payload) is dict and 'settings' in self.payload:
             config.plugin_client_settings = self.payload['settings']
         config.connection = PluginConnection(
-            client=self.args.client or 'SUBLIME_TEXT_3',
+            client=self.args.client,
             ui=self.args.ui_switch,
             args=self.args,
             params=self.payload,
@@ -173,12 +173,9 @@ def parse_args():
 
 #reads piped (via STDIN) request payload
 def get_request_payload():
-    try:
-        if sys.stdin.isatty():
-            return {}
-        return json.loads(sys.stdin.read())
-    except ValueError:
+    if sys.stdin.isatty():
         return {}
+    return json.loads(sys.stdin.read())
 
 def get_available_commands():
     return lib.commands.command_list
