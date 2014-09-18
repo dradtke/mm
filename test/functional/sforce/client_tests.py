@@ -3,25 +3,19 @@
 # joey2 -m unittest project_tests.TestProjectCreate.test_create_project_via_package_xml_file
 # joey2 -m unittest project_tests.TestProjectCreate.test_create_project_via_package_dict
 
-import sys
 import os
 import unittest
-import shutil
-
-sys.path.append('../')
-import lib.config as config
-import lib.util as util
-import test_helper as helper
-from lib.mm_client import MavensMateClient
+import test.lib.test_helper as test_helper
+from mm.sfdc_client import MavensMateClient
 
 class TestClientOperations(unittest.TestCase):
 
     # FYI: overriding this constructor is apparently not recommended, so we should find a better way to init test data
     def __init__(self, *args, **kwargs): 
         super(TestClientOperations, self).__init__(*args, **kwargs) 
-        self.username = 'mm2@force.com'
-        self.password = 'force'
-        self.org_type = 'developer' 
+        self.username = test_helper.get_creds()['username']
+        self.password = test_helper.get_creds()['password']
+        self.org_type = test_helper.get_creds()['org_type']
         self.client = MavensMateClient(credentials={
             "username" : self.username,
             "password" : self.password,
@@ -72,7 +66,7 @@ class TestClientOperations(unittest.TestCase):
         trigger_id = self.client.get_apex_entity_id_by_name(object_type="ApexTrigger", name="mavensmate_test_trigger")
         self.assertTrue(len(trigger_id) == 18)
 
-        helper.delete_metadata(self.client, {'ApexClass':['this_will_compile'], 'ApexTrigger':['mavensmate_test_trigger']})
+        test_helper.delete_metadata(self.client, {'ApexClass':['this_will_compile'], 'ApexTrigger':['mavensmate_test_trigger']})
 
     def test_retrieve(self):
         print '>>> attempting to retrieve some metadata'
@@ -96,7 +90,7 @@ class TestClientOperations(unittest.TestCase):
         compile_result = self.client.compile_apex('class', 'public class this_will_compile { }')
         self.assertTrue(compile_result.success == True)
         self.assertTrue(self.client.does_metadata_exist(object_type="ApexClass", name="this_will_compile"))
-        helper.delete_metadata(self.client, {'ApexClass':['this_will_compile']})
+        test_helper.delete_metadata(self.client, {'ApexClass':['this_will_compile']})
 
     def tearDown(self):
         pass

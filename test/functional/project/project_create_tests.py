@@ -1,24 +1,14 @@
 import os
-import sys
 import unittest
-import mock
 import shutil
-sys.path.append('../')
-sys.path.append('../../')
-sys.path.append('../../../')
-import lib.util as util
-from lib.request import MavensMateRequestHandler
-import test_util as util
-import test_helper
-from test_helper import MavensMateTest
-import lib.request as request
-
+import test.lib.test_helper as test_helper
+from test.lib.test_helper import MavensMateTest
 
 base_test_directory = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class ProjectCreateTest(MavensMateTest):
         
-    def test_should_create_new_project(self): 
+    def test_01_should_create_new_project(self): 
         package = {
             "ApexClass" : "*",
             "ApexPage"  : "*",
@@ -37,13 +27,13 @@ class ProjectCreateTest(MavensMateTest):
         self.assertTrue(os.path.exists(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'documents')))
         self.assertTrue(os.path.exists(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'documents', 'MavensMate_Documents')))
 
-    def test_should_except_for_bad_package(self): 
+    def test_02_should_except_for_bad_package(self): 
         package = {}
         mm_response = test_helper.create_project(self, "unit test project", package=package)
         self.assertTrue(mm_response['success'] == False)
         self.assertTrue(mm_response['body'] == 'Invalid package')
 
-    def test_should_create_new_project_with_all_objects(self): 
+    def test_03_should_create_new_project_with_all_objects(self): 
         package = {
             "CustomObject" : "*"
         }
@@ -58,7 +48,7 @@ class ProjectCreateTest(MavensMateTest):
         self.assertTrue(os.path.isfile(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'objects', 'Opportunity.object')))
         self.assertTrue(os.path.isfile(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'objects', 'Lead.object')))
 
-    def test_should_create_new_project_based_on_package_xml_file(self): 
+    def test_04_should_create_new_project_based_on_package_xml_file(self): 
         package = os.path.join(base_test_directory, 'functional', 'project', 'package.xml')
         project_name = 'unit test project'
         mm_response = test_helper.create_project(self, project_name, package=package)
@@ -68,7 +58,7 @@ class ProjectCreateTest(MavensMateTest):
         self.assertTrue(os.path.exists(os.path.join(base_test_directory, 'test_workspace', project_name, 'src')))
         self.assertTrue(os.path.exists(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'classes')))
 
-    def test_should_create_project_from_existing_directory(self): 
+    def test_05_should_create_project_from_existing_directory(self): 
         if os.path.exists(os.path.join(base_test_directory,"functional","project","existing-project-copy")):
             shutil.rmtree(os.path.join(base_test_directory,"functional","project","existing-project-copy"))
 
@@ -77,9 +67,9 @@ class ProjectCreateTest(MavensMateTest):
 
         stdin = {
             "project_name"  : "existing-project-copy",
-            "username"      : "mm2@force.com",
-            "password"      : "force",
-            "org_type"      : "developer",
+            "username"      : test_helper.get_creds()['username'],
+            "password"      : test_helper.get_creds()['password'],
+            "org_type"      : test_helper.get_creds()['org_type'],
             "directory"     : os.path.join(base_test_directory, 'functional', 'project', 'existing-project-copy'),
             "action"        : "new",
             "workspace"     : os.path.join(base_test_directory, 'test_workspace'),
@@ -98,7 +88,27 @@ class ProjectCreateTest(MavensMateTest):
         self.assertTrue(os.path.isfile(os.path.join(base_test_directory, 'test_workspace', project_name, 'config', '.settings')))
         self.assertTrue(os.path.isfile(os.path.join(base_test_directory, 'test_workspace', project_name, 'src', 'package.xml')))
 
+    def test_06_should_try_to_create_project_from_invalid_directory(self): 
+        if os.path.exists(os.path.join(base_test_directory,"functional","project","existing-project-invalid-copy")):
+            shutil.rmtree(os.path.join(base_test_directory,"functional","project","existing-project-invalid-copy"))
 
+        if not os.path.exists(os.path.join(base_test_directory, 'functional', 'project', 'existing-project-invalid-copy')):
+            shutil.copytree(os.path.join(base_test_directory, 'functional', 'project', 'existing-project-invalid'), os.path.join(base_test_directory, 'functional', 'project', 'existing-project-invalid-copy'))
+
+        stdin = {
+            "project_name"  : "existing-project-invalid-copy",
+            "username"      : test_helper.get_creds()['username'],
+            "password"      : test_helper.get_creds()['password'],
+            "org_type"      : test_helper.get_creds()['org_type'],
+            "directory"     : os.path.join(base_test_directory, 'functional', 'project', 'existing-project-invalid-copy'),
+            "action"        : "new",
+            "workspace"     : os.path.join(base_test_directory, 'test_workspace'),
+            "action"        : "existing"
+        }
+        mm_response = self.runCommand('new_project_from_existing_directory', stdin)
+        self.assertEquals(False, mm_response['success'])
+        self.assertEquals('Could not find package.xml in project src directory.', mm_response['body'])
+        
     def tearDown(self):
         super(ProjectCreateTest, self).tearDown()
         if os.path.exists(os.path.join(base_test_directory,"test_workspace","unit test project")):
@@ -112,8 +122,14 @@ class ProjectCreateTest(MavensMateTest):
         if os.path.exists(os.path.join(base_test_directory,"test_workspace","existing-project-copy")):
             shutil.rmtree(os.path.join(base_test_directory,"test_workspace","existing-project-copy"))
 
+        if os.path.exists(os.path.join(base_test_directory,"test_workspace","existing-project-invalid-copy")):
+            shutil.rmtree(os.path.join(base_test_directory,"test_workspace","existing-project-invalid-copy"))
+
         if os.path.exists(os.path.join(base_test_directory,"functional","project","existing-project-copy")):
             shutil.rmtree(os.path.join(base_test_directory,"functional","project","existing-project-copy"))
+
+        if os.path.exists(os.path.join(base_test_directory,"functional","project","existing-project-invalid-copy")):
+            shutil.rmtree(os.path.join(base_test_directory,"functional","project","existing-project-invalid-copy"))
 
 if __name__ == '__main__':
     if os.path.exists(os.path.join(base_test_directory,"test_workspace","unit test project")):

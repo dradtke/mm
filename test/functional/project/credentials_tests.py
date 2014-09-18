@@ -1,18 +1,8 @@
 import os
-import sys
 import unittest
-import mock
 import shutil
-sys.path.append('../')
-sys.path.append('../../')
-sys.path.append('../../../')
-import lib.util as util
-from lib.request import MavensMateRequestHandler
-import test_util as util
-import test_helper
-from test_helper import MavensMateTest
-import lib.request as request
-
+import test.lib.test_helper as test_helper
+from test.lib.test_helper import MavensMateTest
 
 base_test_directory = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -58,9 +48,9 @@ class CredentialsTest(MavensMateTest):
     def test_04_should_update_project_credentials(self):
         stdin = {
             "project_name" : "unit test project",
-            "username" : "mm2@force.com",
-            "password" : "force",
-            "org_type" : "developer"
+            "username" : test_helper.get_creds()['username'],
+            "password" : test_helper.get_creds()['password'],
+            "org_type" : test_helper.get_creds()['org_type']
         }
         mm_response = self.runCommand('update_credentials', stdin)
         self.assertTrue(mm_response['success'] == True)
